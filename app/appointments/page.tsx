@@ -1,80 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import ProtectedRoute from "@/components/protected-route"
-
-// Mock data for appointments
-const appointmentsData = [
-  {
-    id: 1,
-    doctor: {
-      name: "Dr. Abir Banik",
-      specialty: "Fart Analyst",
-      image: "/images/doctors/doctor3.png",
-    },
-    date: "2025-05-23", // Updated to May 23
-    time: "10:00 AM",
-    status: "upcoming",
-  },
-  {
-    id: 2,
-    doctor: {
-      name: "Dr. Rahat Khandokar",
-      specialty: "Urologist",
-      image: "/images/doctors/doctor2.png",
-    },
-    date: "2025-05-25",
-    time: "2:30 PM",
-    status: "upcoming",
-  },
-  {
-    id: 3,
-    doctor: {
-      name: "Dr. Deedat Chowdhury",
-      specialty: "Plastic Surgeon",
-      image: "/images/doctors/doctor1.png",
-    },
-    date: "2025-04-15",
-    time: "9:30 AM",
-    status: "completed",
-  },
-  {
-    id: 4,
-    doctor: {
-      name: "Dr. Kazi Anwar",
-      specialty: "Flatulogist",
-      image: "/images/doctors/doctor5.png",
-    },
-    date: "2025-04-05",
-    time: "11:00 AM",
-    status: "cancelled",
-  },
-  {
-    id: 5,
-    doctor: {
-      name: "Dr. Sajid Sehgal",
-      specialty: "Sexologist",
-      image: "/images/doctors/doctor4.png",
-    },
-    date: "2025-05-05",
-    time: "11:11 AM",
-    status: "cancelled",
-  },
-]
+import { getAppointments, updateAppointment, type Appointment } from "@/lib/appointments"
 
 export default function AppointmentsPage() {
   const [filter, setFilter] = useState("all")
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  // Load appointments when component mounts
+  useEffect(() => {
+    setAppointments(getAppointments())
+  }, [])
 
   // Filter appointments based on selected filter
   const filteredAppointments =
-    filter === "all" ? appointmentsData : appointmentsData.filter((appointment) => appointment.status === filter)
+    filter === "all" ? appointments : appointments.filter((appointment) => appointment.status === filter)
 
   // Format date to display in a readable format
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { weekday: "long", year: "numeric", month: "long", day: "numeric" }
     return new Date(dateString).toLocaleDateString("en-US", options)
+  }
+
+  // Handle appointment cancellation
+  const handleCancel = (appointment: Appointment) => {
+    const updatedAppointment = { ...appointment, status: "cancelled" as const }
+    updateAppointment(updatedAppointment)
+
+    // Update local state
+    setAppointments(appointments.map((a) => (a.id === appointment.id ? updatedAppointment : a)))
   }
 
   return (
@@ -247,10 +204,22 @@ export default function AppointmentsPage() {
                       </div>
                     </div>
 
+                    {appointment.reason && (
+                      <div className="mb-3">
+                        <div className="text-muted mb-1">Reason:</div>
+                        <p className="mb-0">{appointment.reason}</p>
+                      </div>
+                    )}
+
                     {appointment.status === "upcoming" && (
                       <div className="d-flex gap-2">
                         <button className="btn btn-outline-primary flex-grow-1">Reschedule</button>
-                        <button className="btn btn-outline-danger flex-grow-1">Cancel</button>
+                        <button
+                          className="btn btn-outline-danger flex-grow-1"
+                          onClick={() => handleCancel(appointment)}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
 

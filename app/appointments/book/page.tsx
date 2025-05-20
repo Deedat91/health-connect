@@ -2,9 +2,10 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import ProtectedRoute from "@/components/protected-route"
+import { saveAppointment } from "@/lib/appointments"
 
 // Mock data for doctors
 const doctors = [
@@ -60,6 +61,7 @@ const timeSlots = [
 
 export default function BookAppointmentPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const doctorId = searchParams.get("doctor")
 
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null)
@@ -67,6 +69,7 @@ export default function BookAppointmentPage() {
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [reason, setReason] = useState<string>("")
   const [step, setStep] = useState<number>(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (doctorId) {
@@ -99,18 +102,33 @@ export default function BookAppointmentPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
-    // Here we would normally send the appointment data to the backend
-    console.log("Appointment booked:", {
-      doctor: selectedDoctor,
-      date: selectedDate,
-      time: selectedTime,
-      reason,
-    })
+    try {
+      // Create and save the new appointment
+      const newAppointment = {
+        doctor: {
+          name: selectedDoctor.name,
+          specialty: selectedDoctor.specialty,
+          image: selectedDoctor.image,
+        },
+        date: selectedDate,
+        time: selectedTime,
+        reason: reason,
+        status: "upcoming" as const,
+      }
 
-    // Show success message and redirect
-    alert("Appointment booked successfully!")
-    window.location.href = "/appointments"
+      saveAppointment(newAppointment)
+
+      // Show success message and redirect
+      alert("Appointment booked successfully!")
+      router.push("/appointments")
+    } catch (error) {
+      console.error("Error saving appointment:", error)
+      alert("There was an error booking your appointment. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Get today's date in YYYY-MM-DD format for min date attribute
@@ -354,8 +372,19 @@ export default function BookAppointmentPage() {
                         <button type="button" className="btn btn-outline-primary" onClick={handleBack}>
                           Back
                         </button>
-                        <button type="submit" className="btn btn-primary" disabled={!reason}>
-                          Confirm Booking
+                        <button type="submit" className="btn btn-primary" disabled={!reason || isSubmitting}>
+                          {isSubmitting ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-2"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              Processing...
+                            </>
+                          ) : (
+                            "Confirm Booking"
+                          )}
                         </button>
                       </div>
                     </div>
