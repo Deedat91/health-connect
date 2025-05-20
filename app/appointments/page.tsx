@@ -14,7 +14,7 @@ const appointmentsData = [
       specialty: "Fart Analyst",
       image: "/images/doctors/doctor3.png",
     },
-    date: "2025-05-20",
+    date: "2025-05-23", // Updated to May 23
     time: "10:00 AM",
     status: "upcoming",
   },
